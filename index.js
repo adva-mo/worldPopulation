@@ -8,6 +8,7 @@ const app = {
   },
   currentSortOption: null,
   countriesToDisplay: null,
+  continentDisplay: null,
 };
 const continentsBtns = document.querySelectorAll(".continent-btn");
 const countriesContainer = document.querySelector(".countries-container");
@@ -29,10 +30,7 @@ const fetchCountriesData = async (continent) => {
       `https://restcountries.com/v3.1/region/${continent}`
     );
     const res = await data.json();
-    console.log(res);
-    res.forEach((c) => {
-      console.log(c.name.common);
-    });
+    // res.forEach((c) => {});
     transformCountriesData(res, continent);
   } catch {
     console.log("error" + e);
@@ -49,7 +47,8 @@ const transformCountriesData = async (arr, continent) => {
         countryObj["name"] = country.name.common;
         countryObj["population"] = country.population;
         countryObj["flag"] = country.flag;
-        countryObj["officialN"] = country.name.official;
+        countryObj["official"] = country.name.official;
+        countryObj["cities"] = null;
 
         return countryObj;
       })
@@ -57,8 +56,7 @@ const transformCountriesData = async (arr, continent) => {
         return b.population - a.population;
       });
     app.data[continent] = [...res.slice(0, 25)];
-    await arrangeCountriesNames(continent);
-    addCountriesBtn();
+    createCountriesBTN(continent);
   } catch {
     console.log("error");
   }
@@ -73,6 +71,7 @@ const addContinentsEvents = () => {
 };
 
 const showCountriesData = (e) => {
+  app.continentDisplay = e.target.id;
   if (app.data[e.target.id].length > 0) {
     console.log("country data is full");
     return;
@@ -81,25 +80,21 @@ const showCountriesData = (e) => {
 };
 //! ------------------------ create countries buttons functions ------------------------
 
-const arrangeCountriesNames = async (continent) => {
-  const countries = [];
-  for (cont in app.data) {
-    app.data[cont].forEach((country) => {
-      countries.push(country.name);
+const createCountriesBTN = (continent) => {
+  console.log(app.data[continent]);
+  app.data[continent]
+    .sort((a, b) => {
+      return a.name - b.name;
+    })
+    .forEach((c) => {
+      //   console.log(c);
+      let button = document.createElement("button");
+      button.setAttribute("id", `${c.name.toLowerCase()}`);
+      button.setAttribute("official", `${c.official.toLowerCase()}`);
+      button.classList.add("country-btn");
+      button.textContent = `${c.name}`;
+      countriesContainer.append(button);
     });
-  }
-  app.countriesToDisplay = [...countries.sort()];
-};
-
-const addCountriesBtn = () => {
-  app.countriesToDisplay.forEach((country) => {
-    let button = document.createElement("button");
-    button.setAttribute("id", `${country.toLowerCase()}`);
-    // button.setAttribute("official-n", `${country.toLowerCase()}`);
-    button.classList.add("country-btn");
-    button.textContent = `${country}`;
-    countriesContainer.append(button);
-  });
   addCountriesClicks();
 };
 
@@ -114,24 +109,7 @@ const addCountriesClicks = () => {
 
 const handleCountryClick = async (e) => {
   try {
-    // const res = await fetch(
-    //   "https://countriesnow.space/api/v0.1/countries/population/cities/filter",
-    //   {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       limit: 10,
-    //       order: "dec",
-    //       orderBy: "population",
-    //       country: `${e.target.id}`,
-    //     }),
-    //   }
-    // );
-    // const data = await res.json();
-    // console.log(data);
-    // transformCitiesData(data);
+    let offic = e.target.getAttribute("official");
     const res = await fetch(
       "https://countriesnow.space/api/v0.1/countries/population/cities/filter",
       {
@@ -143,22 +121,74 @@ const handleCountryClick = async (e) => {
           limit: 10,
           order: "dec",
           orderBy: "population",
+          country: `${offic}`,
           country: `${e.target.id}`,
         }),
       }
     );
     const data = await res.json();
-    console.log(data);
-    transformCitiesData(data);
+    if (data.error == false) {
+      //   console.log(data);
+      transformCitiesData(data, e);
+    } else {
+      console.log("no city by common name");
+      handleCountryClickByOfficial(e);
+    }
+    // console.log(data);
   } catch {
     console.log("error");
   }
 };
 
-const transformCitiesData = async (data) => {
-  const rawInfon = await data;
-  console.log(rawInfon);
+const handleCountryClickByOfficial = async (e) => {
+  //   console.log("ok");
+  try {
+    let offic = e.target.getAttribute("official");
+    const res = await fetch(
+      "https://countriesnow.space/api/v0.1/countries/population/cities/filter",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          limit: 10,
+          order: "dec",
+          orderBy: "population",
+          country: `${offic}`,
+        }),
+      }
+    );
+    const data = await res.json();
+    // console.log(data);
+    transformCitiesData(data, e);
+  } catch {
+    console.log("error");
+  }
 };
+
+const transformCitiesData = async (data, e) => {
+  try {
+    const rawInfon = await data;
+    let country = e.target.id;
+    country = country[0].toUpperCase() + country.slice(1);
+    const countryOBJ = app.data[app.continentDisplay].find((c) => {
+      return c.name == country;
+    });
+    const cities = [];
+    rawInfon.data.forEach((c) => {
+      const cityObj = {};
+      cityObj["city"] = c.city;
+      cityObj["population"] = c.populationCounts[0].value;
+      cityObj["year"] = c.populationCounts[0].year;
+      cities.push(cityObj);
+    });
+    countryOBJ.cities = [...cities];
+  } catch {
+    console.log("error in transformCitiesData ");
+  }
+};
+
 //! ------------------------ App srats here ------------------------
 
 const startApp = () => {
@@ -167,5 +197,4 @@ const startApp = () => {
 
 startApp();
 
-//? "United Kingdom of Great Britain and Northern Ireland",- check for proper name
-//?republic of finland
+//? mali etiophia venezuela
