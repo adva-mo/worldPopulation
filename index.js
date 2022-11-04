@@ -10,27 +10,19 @@ const app = {
   countriesToDisplay: null,
   continentDisplay: null,
 };
+let myChart;
 const continentsBtns = document.querySelectorAll(".continent-btn");
-const countriesContainer = document.querySelector(".countries-container");
+let countriesContainer = document.querySelector(".countries-container");
+let chartContainer = document.querySelector(".chart-container");
 
 //! ------------------------ async functions ------------------------
 
-const fetchData = async (url) => {
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-  } catch (e) {
-    console.log("ERROE" + e);
-  }
-};
-
-const fetchCountriesData = async (continent) => {
+const fetchCountriesAndPopulation = async (continent) => {
   try {
     const data = await fetch(
       `https://restcountries.com/v3.1/region/${continent}`
     );
     const res = await data.json();
-    // res.forEach((c) => {});
     transformCountriesData(res, continent);
   } catch {
     console.log("error" + e);
@@ -40,7 +32,7 @@ const fetchCountriesData = async (continent) => {
 const transformCountriesData = async (arr, continent) => {
   try {
     countriesArr = await arr;
-    console.log(countriesArr);
+    // console.log(countriesArr);
     const res = countriesArr
       .map((country) => {
         const countryObj = {};
@@ -62,26 +54,28 @@ const transformCountriesData = async (arr, continent) => {
   }
 };
 
-//! ------------------------ continents buttons functions ------------------------
+//! ------------------------ continents clicks functions ------------------------
 
 const addContinentsEvents = () => {
   continentsBtns.forEach((btn) => {
-    btn.addEventListener("click", showCountriesData);
+    btn.addEventListener("click", handleContinentClicks);
   });
 };
 
-const showCountriesData = (e) => {
+const handleContinentClicks = async (e) => {
   app.continentDisplay = e.target.id;
   if (app.data[e.target.id].length > 0) {
-    console.log("country data is full");
+    createChart();
     return;
+  } else {
+    await fetchCountriesAndPopulation(e.target.id);
+    createChart();
   }
-  fetchCountriesData(e.target.id);
 };
 //! ------------------------ create countries buttons functions ------------------------
 
 const createCountriesBTN = (continent) => {
-  console.log(app.data[continent]);
+  // console.log(app.data[continent]);
   app.data[continent]
     .sort((a, b) => {
       return a.name - b.name;
@@ -141,7 +135,6 @@ const handleCountryClick = async (e) => {
 };
 
 const handleCountryClickByOfficial = async (e) => {
-  //   console.log("ok");
   try {
     let offic = e.target.getAttribute("official");
     const res = await fetch(
@@ -160,7 +153,7 @@ const handleCountryClickByOfficial = async (e) => {
       }
     );
     const data = await res.json();
-    // console.log(data);
+    console.log(data);
     transformCitiesData(data, e);
   } catch {
     console.log("error");
@@ -170,11 +163,20 @@ const handleCountryClickByOfficial = async (e) => {
 const transformCitiesData = async (data, e) => {
   try {
     const rawInfon = await data;
-    let country = e.target.id;
+    console.log(rawInfon);
+    let country = e.target.id; //!fix the prblem that official name needto convert into capitalCamal
     country = country[0].toUpperCase() + country.slice(1);
-    const countryOBJ = app.data[app.continentDisplay].find((c) => {
+    console.log(country);
+    let countryOBJ = app.data[app.continentDisplay].find((c) => {
       return c.name == country;
     });
+    if (countryOBJ == undefined) {
+      console.log("undefinde");
+      countryOBJ = app.data[app.continentDisplay].find((c) => {
+        return c.official == country;
+      });
+    }
+    console.log(countryOBJ);
     const cities = [];
     rawInfon.data.forEach((c) => {
       const cityObj = {};
@@ -197,4 +199,51 @@ const startApp = () => {
 
 startApp();
 
-//? mali etiophia venezuela
+//? mali etiophia venezuela el salvador, trinidad and tobago
+
+//! ------------------------ CHART------------------------
+function displayChart(labels, data1) {
+  if (myChart != undefined) myChart.destroy();
+
+  const data = {
+    labels: [...labels],
+    datasets: [
+      {
+        label: "My First dataset",
+        backgroundColor: "rgb(255, 99, 132)",
+        borderColor: "rgb(255, 99, 132)",
+        data: [...data1],
+      },
+    ],
+  };
+  const config = {
+    type: "bar",
+    data: data,
+    options: {},
+  };
+
+  canvas = document.createElement("canvas");
+  canvas.setAttribute("id", "canvas");
+  chartContainer.appendChild(canvas);
+
+  myChart = new Chart(document.getElementById("canvas"), config);
+}
+
+function getChartLables() {
+  const labels = app.data[app.continentDisplay].map((country) => {
+    return country.name;
+  });
+  return labels;
+}
+function getChartValues() {
+  const values = app.data[app.continentDisplay].map((country) => {
+    return country.population;
+  });
+  return values;
+}
+
+function createChart() {
+  const labels = getChartLables();
+  const data = getChartValues();
+  displayChart(labels, data);
+}
