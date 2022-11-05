@@ -115,7 +115,7 @@ async function handleCountryClick(e) {
 function setSpinner(bool) {
   if (bool) {
     const spinner = document.createElement("h3");
-    spinner.textContent = "Loading";
+    spinner.textContent = "Loading...";
     spinner.classList.add("spinner");
     chartContainer.appendChild(spinner);
   } else {
