@@ -7,7 +7,7 @@ const app = {
     americas: [],
   },
   currentSortOption: null,
-  countriesToDisplay: null,
+  countryToDisplay: null,
   continentDisplay: null,
 };
 let myChart;
@@ -19,6 +19,7 @@ let chartContainer = document.querySelector(".chart-container");
 
 const fetchCountriesAndPopulation = async (continent) => {
   try {
+    console.log("fetching");
     const data = await fetch(
       `https://restcountries.com/v3.1/region/${continent}`
     );
@@ -48,7 +49,7 @@ const transformCountriesData = async (arr, continent) => {
         return b.population - a.population;
       });
     app.data[continent] = [...res.slice(0, 25)];
-    createCountriesBTN(continent);
+    // createCountriesBTN(continent);
   } catch {
     console.log("error");
   }
@@ -64,33 +65,34 @@ const addContinentsEvents = () => {
 
 const handleContinentClicks = async (e) => {
   app.continentDisplay = e.target.id;
+  app.countryToDisplay = null;
   if (app.data[e.target.id].length > 0) {
     createChart();
+    createCountriesBTN();
     return;
   } else {
     await fetchCountriesAndPopulation(e.target.id);
     createChart();
+    createCountriesBTN();
   }
 };
-//! ------------------------ create countries buttons functions ------------------------
-
-const createCountriesBTN = (continent) => {
-  // console.log(app.data[continent]);
-  app.data[continent]
+const createCountriesBTN = () => {
+  countriesContainer.textContent = "";
+  app.data[app.continentDisplay]
     .sort((a, b) => {
       return a.name - b.name;
     })
     .forEach((c) => {
-      //   console.log(c);
       let button = document.createElement("button");
-      button.setAttribute("id", `${c.name.toLowerCase()}`);
-      button.setAttribute("official", `${c.official.toLowerCase()}`);
+      button.setAttribute("id", `${c.name}`);
+      button.setAttribute("official", `${c.official}`);
       button.classList.add("country-btn");
       button.textContent = `${c.name}`;
       countriesContainer.append(button);
     });
   addCountriesClicks();
 };
+//! ------------------------ countries clicks functions ------------------------
 
 const addCountriesClicks = () => {
   const countriesBTN = document.querySelectorAll(".country-btn");
@@ -99,11 +101,19 @@ const addCountriesClicks = () => {
   });
 };
 
-//! ------------------------ display cities data functions------------------------
+async function handleCountryClick(e) {
+  app.countryToDisplay = e.target.id;
+  if (true) {
+    await fetchCitiesInfo(e);
+    createChart();
+  } else {
+    // createChart()
+  }
+}
+//! ------------------------ display cities population functions------------------------
 
-const handleCountryClick = async (e) => {
+const fetchCitiesInfo = async (e) => {
   try {
-    let offic = e.target.getAttribute("official");
     const res = await fetch(
       "https://countriesnow.space/api/v0.1/countries/population/cities/filter",
       {
@@ -115,26 +125,23 @@ const handleCountryClick = async (e) => {
           limit: 10,
           order: "dec",
           orderBy: "population",
-          country: `${offic}`,
           country: `${e.target.id}`,
         }),
       }
     );
     const data = await res.json();
-    if (data.error == false) {
-      //   console.log(data);
-      transformCitiesData(data, e);
+    console.log(data);
+    if (data.error == true) {
+      await fetchCitiesPopByOfficial(e);
     } else {
-      console.log("no city by common name");
-      handleCountryClickByOfficial(e);
+      transformCitiesData(data, e);
     }
-    // console.log(data);
   } catch {
     console.log("error");
   }
 };
 
-const handleCountryClickByOfficial = async (e) => {
+const fetchCitiesPopByOfficial = async (e) => {
   try {
     let offic = e.target.getAttribute("official");
     const res = await fetch(
@@ -153,8 +160,7 @@ const handleCountryClickByOfficial = async (e) => {
       }
     );
     const data = await res.json();
-    console.log(data);
-    transformCitiesData(data, e);
+    if (data.error == false) transformCitiesData(data, e);
   } catch {
     console.log("error");
   }
@@ -162,32 +168,31 @@ const handleCountryClickByOfficial = async (e) => {
 
 const transformCitiesData = async (data, e) => {
   try {
-    const rawInfon = await data;
-    console.log(rawInfon);
-    let country = e.target.id; //!fix the prblem that official name needto convert into capitalCamal
-    country = country[0].toUpperCase() + country.slice(1);
-    console.log(country);
+    const rawInfo = await data;
+    if (rawInfo.error) {
+      console.log(rawInfo.msg);
+      return;
+    }
     let countryOBJ = app.data[app.continentDisplay].find((c) => {
-      return c.name == country;
+      return c.name == e.target.id;
     });
     if (countryOBJ == undefined) {
-      console.log("undefinde");
       countryOBJ = app.data[app.continentDisplay].find((c) => {
-        return c.official == country;
+        return c.official == e.target.id;
       });
     }
-    console.log(countryOBJ);
     const cities = [];
-    rawInfon.data.forEach((c) => {
+    rawInfo.data.forEach((c) => {
       const cityObj = {};
       cityObj["city"] = c.city;
       cityObj["population"] = c.populationCounts[0].value;
       cityObj["year"] = c.populationCounts[0].year;
       cities.push(cityObj);
     });
-    countryOBJ.cities = [...cities];
+    countryOBJ.cities = [...cities]; //=array of city objects
+    app.countryToDisplay = countryOBJ;
   } catch {
-    console.log("error in transformCitiesData ");
+    console.log("error");
   }
 };
 
@@ -199,20 +204,39 @@ const startApp = () => {
 
 startApp();
 
-//? mali etiophia venezuela el salvador, trinidad and tobago
+//? taiwan mali etiophia venezuela el salvador, trinidad and tobago drcongo somalia
 
 //! ------------------------ CHART------------------------
-function displayChart(labels, data1) {
+async function createChart() {
+  if (app.countryToDisplay) {
+    const labelsAndValues = getCitiesLables();
+    displayChart(labelsAndValues);
+  } else {
+    const labelsandVal = getCountriesLables();
+    displayChart(labelsandVal);
+  }
+}
+
+function displayChart(data1) {
   if (myChart != undefined) myChart.destroy();
 
   const data = {
-    labels: [...labels],
+    labels: [...data1[0]],
     datasets: [
       {
-        label: "My First dataset",
+        label: "population",
         backgroundColor: "rgb(255, 99, 132)",
-        borderColor: "rgb(255, 99, 132)",
-        data: [...data1],
+        borderColor: "rgb(174,174,174)",
+        color: "#eeeeee;",
+        data: [...data1[1]],
+        borderWidth: "2px",
+      },
+      {
+        label: "population",
+        backgroundColor: "rgba(174,174,174,0.6)",
+        borderColor: "rgba(174,174,174,0.6)",
+        data: [...data1[1]],
+        borderWidth: 2,
       },
     ],
   };
@@ -229,21 +253,28 @@ function displayChart(labels, data1) {
   myChart = new Chart(document.getElementById("canvas"), config);
 }
 
-function getChartLables() {
+function getCountriesLables() {
   const labels = app.data[app.continentDisplay].map((country) => {
-    return country.name;
+    return `${country.name} ${country.flag}`;
   });
-  return labels;
-}
-function getChartValues() {
   const values = app.data[app.continentDisplay].map((country) => {
     return country.population;
   });
-  return values;
+  return [labels, values];
 }
 
-function createChart() {
-  const labels = getChartLables();
-  const data = getChartValues();
-  displayChart(labels, data);
+//! ------------------------ CHART - CITIES------------------------
+
+function getCitiesLables() {
+  const lables = [];
+  const values = [];
+  for (key in app.countryToDisplay) {
+    if (key == "cities") {
+      for (city of app.countryToDisplay.cities) {
+        lables.push(city.city);
+        values.push(city.population);
+      }
+    }
+  }
+  return [lables, values];
 }

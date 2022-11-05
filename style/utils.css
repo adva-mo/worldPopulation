@@ -1,3 +1,14 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  --light-blue: #3ec8ea;
+  --blue-bg: rgba(166, 208, 240);
+  --cream: #eeeeee;
+  --blue: #0081e2;
+  --gray: #aeaeae;
+  --eagle-green: #185d65ff;
+}
 .flex-row {
   display: flex;
   justify-content: center;
@@ -10,6 +21,17 @@
   justify-content: center;
   align-items: center;
 }
-.country-btn {
-  color: blue;
+.continent-btn {
+  padding: 0.5rem;
+  width: 5rem;
+  font-size: 1rem;
+}
+button {
+  background-color: var(--blue-bg);
+  /* background: rgba(0, 0, 0, 0.3); */
+  color: var(--eagle-green);
+  border: none;
+  margin: 0 0.4rem;
+  padding: 0.2rem;
+  border-radius: 5px;
 }
