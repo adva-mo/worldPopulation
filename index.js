@@ -19,12 +19,14 @@ let chartContainer = document.querySelector(".chart-container");
 
 const fetchCountriesAndPopulation = async (continent) => {
   try {
-    console.log("fetching");
+    setSpinner(true);
     const data = await fetch(
       `https://restcountries.com/v3.1/region/${continent}`
     );
     const res = await data.json();
+    console.log(res);
     transformCountriesData(res, continent);
+    setSpinner(false);
   } catch {
     console.log("error" + e);
   }
@@ -33,7 +35,6 @@ const fetchCountriesAndPopulation = async (continent) => {
 const transformCountriesData = async (arr, continent) => {
   try {
     countriesArr = await arr;
-    // console.log(countriesArr);
     const res = countriesArr
       .map((country) => {
         const countryObj = {};
@@ -42,20 +43,18 @@ const transformCountriesData = async (arr, continent) => {
         countryObj["flag"] = country.flag;
         countryObj["official"] = country.name.official;
         countryObj["cities"] = null;
-
         return countryObj;
       })
       .sort((a, b) => {
         return b.population - a.population;
       });
     app.data[continent] = [...res.slice(0, 25)];
-    // createCountriesBTN(continent);
   } catch {
     console.log("error");
   }
 };
 
-//! ------------------------ continents clicks functions ------------------------
+//! ------------------------ continents clicks events ------------------------
 
 const addContinentsEvents = () => {
   continentsBtns.forEach((btn) => {
@@ -76,10 +75,12 @@ const handleContinentClicks = async (e) => {
     createCountriesBTN();
   }
 };
+
 const createCountriesBTN = () => {
   countriesContainer.textContent = "";
   app.data[app.continentDisplay]
     .sort((a, b) => {
+      //* check the sort
       return a.name - b.name;
     })
     .forEach((c) => {
@@ -92,7 +93,7 @@ const createCountriesBTN = () => {
     });
   addCountriesClicks();
 };
-//! ------------------------ countries clicks functions ------------------------
+//! ------------------------ countries clicks events ------------------------
 
 const addCountriesClicks = () => {
   const countriesBTN = document.querySelectorAll(".country-btn");
@@ -102,18 +103,35 @@ const addCountriesClicks = () => {
 };
 
 async function handleCountryClick(e) {
-  app.countryToDisplay = e.target.id;
-  if (true) {
-    await fetchCitiesInfo(e);
+  let countryObj = app.data[app.continentDisplay].find((country) => {
+    return country.name == e.target.id;
+  });
+  app.countryToDisplay = countryObj;
+  if (app.countryToDisplay.cities) {
     createChart();
   } else {
-    // createChart()
+    await fetchCitiesInfo(e);
+    createChart();
   }
 }
-//! ------------------------ display cities population functions------------------------
+
+function setSpinner(bool) {
+  if (bool) {
+    const spinner = document.createElement("h3");
+    spinner.textContent = "Loading";
+    spinner.classList.add("spinner");
+    chartContainer.appendChild(spinner);
+  } else {
+    const spinner = document.querySelector("h3");
+    chartContainer.removeChild(spinner);
+  }
+}
+
+//! ------------------------ fetch cities population functions------------------------
 
 const fetchCitiesInfo = async (e) => {
   try {
+    setSpinner(true);
     const res = await fetch(
       "https://countriesnow.space/api/v0.1/countries/population/cities/filter",
       {
@@ -130,7 +148,6 @@ const fetchCitiesInfo = async (e) => {
       }
     );
     const data = await res.json();
-    console.log(data);
     if (data.error == true) {
       await fetchCitiesPopByOfficial(e);
     } else {
@@ -159,6 +176,10 @@ const fetchCitiesPopByOfficial = async (e) => {
         }),
       }
     );
+    if (res.ok == false) {
+      setSpinner(false);
+      console.log("no info for the country");
+    }
     const data = await res.json();
     if (data.error == false) transformCitiesData(data, e);
   } catch {
@@ -166,20 +187,13 @@ const fetchCitiesPopByOfficial = async (e) => {
   }
 };
 
-const transformCitiesData = async (data, e) => {
+const transformCitiesData = async (data) => {
   try {
     const rawInfo = await data;
+    setSpinner(false);
     if (rawInfo.error) {
       console.log(rawInfo.msg);
       return;
-    }
-    let countryOBJ = app.data[app.continentDisplay].find((c) => {
-      return c.name == e.target.id;
-    });
-    if (countryOBJ == undefined) {
-      countryOBJ = app.data[app.continentDisplay].find((c) => {
-        return c.official == e.target.id;
-      });
     }
     const cities = [];
     rawInfo.data.forEach((c) => {
@@ -189,8 +203,7 @@ const transformCitiesData = async (data, e) => {
       cityObj["year"] = c.populationCounts[0].year;
       cities.push(cityObj);
     });
-    countryOBJ.cities = [...cities]; //=array of city objects
-    app.countryToDisplay = countryOBJ;
+    app.countryToDisplay.cities = [...cities];
   } catch {
     console.log("error");
   }
@@ -203,8 +216,6 @@ const startApp = () => {
 };
 
 startApp();
-
-//? taiwan mali etiophia venezuela el salvador, trinidad and tobago drcongo somalia
 
 //! ------------------------ CHART------------------------
 async function createChart() {
@@ -262,8 +273,6 @@ function getCountriesLables() {
   });
   return [labels, values];
 }
-
-//! ------------------------ CHART - CITIES------------------------
 
 function getCitiesLables() {
   const lables = [];
