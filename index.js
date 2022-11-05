@@ -249,6 +249,7 @@ function displayChart(data1) {
   }
   const data = {
     labels: [...data1[0]],
+    color: "rgb(66,66,66)",
     datasets: [
       {
         label: "Population",
@@ -259,7 +260,7 @@ function displayChart(data1) {
           "rgb(62,172,255)",
           "rgb(13,151,255)",
         ],
-        color: "#eeeeee;",
+        color: "rgb(66,66,66)",
         data: [...data1[1]],
         borderWidth: 2,
         borderColor: "rgb(174,174,174)",
