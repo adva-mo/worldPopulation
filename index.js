@@ -6,7 +6,6 @@ const app = {
     oceania: [],
     americas: [],
   },
-  currentSortOption: null,
   countryToDisplay: null,
   continentDisplay: null,
 };
@@ -24,11 +23,11 @@ const fetchCountriesAndPopulation = async (continent) => {
       `https://restcountries.com/v3.1/region/${continent}`
     );
     const res = await data.json();
-    console.log(res);
+    // console.log(res);
     transformCountriesData(res, continent);
     setSpinner(false);
   } catch {
-    console.log("error" + e);
+    console.log("error");
   }
 };
 
@@ -103,15 +102,13 @@ const addCountriesClicks = () => {
 };
 
 async function handleCountryClick(e) {
-  let countryObj = app.data[app.continentDisplay].find((country) => {
+  app.countryToDisplay = app.data[app.continentDisplay].find((country) => {
     return country.name == e.target.id;
   });
-  app.countryToDisplay = countryObj;
   if (app.countryToDisplay.cities) {
     createChart();
   } else {
     await fetchCitiesInfo(e);
-    createChart();
   }
 }
 
@@ -125,6 +122,18 @@ function setSpinner(bool) {
     const spinner = document.querySelector("h3");
     chartContainer.removeChild(spinner);
   }
+}
+
+function displayErrorMsg() {
+  setSpinner(false);
+  let errorMsg = document.createElement("div");
+  errorMsg.textContent = `Oops...\n
+  information for ${app.countryToDisplay.name} is'nt available!`;
+  errorMsg.classList.add("error");
+  chartContainer.appendChild(errorMsg);
+  setTimeout(() => {
+    errorMsg.remove();
+  }, 2000);
 }
 
 //! ------------------------ fetch cities population functions------------------------
@@ -148,10 +157,13 @@ const fetchCitiesInfo = async (e) => {
       }
     );
     const data = await res.json();
+    console.log(data);
     if (data.error == true) {
       await fetchCitiesPopByOfficial(e);
+      return;
     } else {
       transformCitiesData(data, e);
+      return;
     }
   } catch {
     console.log("error");
@@ -177,8 +189,8 @@ const fetchCitiesPopByOfficial = async (e) => {
       }
     );
     if (res.ok == false) {
-      setSpinner(false);
-      console.log("no info for the country");
+      displayErrorMsg();
+      return;
     }
     const data = await res.json();
     if (data.error == false) transformCitiesData(data, e);
@@ -191,10 +203,6 @@ const transformCitiesData = async (data) => {
   try {
     const rawInfo = await data;
     setSpinner(false);
-    if (rawInfo.error) {
-      console.log(rawInfo.msg);
-      return;
-    }
     const cities = [];
     rawInfo.data.forEach((c) => {
       const cityObj = {};
@@ -204,6 +212,7 @@ const transformCitiesData = async (data) => {
       cities.push(cityObj);
     });
     app.countryToDisplay.cities = [...cities];
+    createChart();
   } catch {
     console.log("error");
   }
@@ -217,7 +226,7 @@ const startApp = () => {
 
 startApp();
 
-//! ------------------------ CHART------------------------
+//! ------------------------ CHART functions ------------------------
 async function createChart() {
   if (app.countryToDisplay) {
     const labelsAndValues = getCitiesLables();
@@ -230,7 +239,6 @@ async function createChart() {
 
 function displayChart(data1) {
   if (myChart != undefined) myChart.destroy();
-
   const data = {
     labels: [...data1[0]],
     datasets: [
@@ -256,11 +264,9 @@ function displayChart(data1) {
     data: data,
     options: {},
   };
-
   canvas = document.createElement("canvas");
   canvas.setAttribute("id", "canvas");
   chartContainer.appendChild(canvas);
-
   myChart = new Chart(document.getElementById("canvas"), config);
 }
 
