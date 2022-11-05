@@ -8,6 +8,7 @@ const app = {
   },
   countryToDisplay: null,
   continentDisplay: null,
+  freez: false,
 };
 let myChart;
 const continentsBtns = document.querySelectorAll(".continent-btn");
@@ -19,13 +20,14 @@ let chartContainer = document.querySelector(".chart-container");
 const fetchCountriesAndPopulation = async (continent) => {
   try {
     setSpinner(true);
+    app.freez = true;
     const data = await fetch(
       `https://restcountries.com/v3.1/region/${continent}`
     );
     const res = await data.json();
-    console.log(res);
     transformCountriesData(res, continent);
     setSpinner(false);
+    app.freez = false;
   } catch {
     console.log("error");
   }
@@ -62,6 +64,7 @@ const addContinentsEvents = () => {
 };
 
 const handleContinentClicks = async (e) => {
+  if (app.freez) return;
   app.continentDisplay = e.target.id;
   app.countryToDisplay = null;
   if (app.data[e.target.id].length > 0) {
@@ -102,6 +105,7 @@ const addCountriesClicks = () => {
 };
 
 async function handleCountryClick(e) {
+  if (app.freez) return;
   app.countryToDisplay = app.data[app.continentDisplay].find((country) => {
     return country.name == e.target.id;
   });
@@ -133,6 +137,7 @@ function displayErrorMsg() {
   chartContainer.appendChild(errorMsg);
   setTimeout(() => {
     errorMsg.remove();
+    app.freez = false;
   }, 2000);
 }
 
@@ -141,6 +146,7 @@ function displayErrorMsg() {
 const fetchCitiesInfo = async (e) => {
   try {
     setSpinner(true);
+    app.freez = true;
     const res = await fetch(
       "https://countriesnow.space/api/v0.1/countries/population/cities/filter",
       {
@@ -157,7 +163,6 @@ const fetchCitiesInfo = async (e) => {
       }
     );
     const data = await res.json();
-    // console.log(data);
     if (data.error) {
       await fetchCitiesPopByOfficial(e);
     } else {
@@ -200,7 +205,6 @@ const fetchCitiesPopByOfficial = async (e) => {
 const transformCitiesData = async (data) => {
   try {
     const rawInfo = await data;
-    console.log(rawInfo);
     setSpinner(false);
     const cities = [];
     rawInfo.data.forEach((c) => {
@@ -212,6 +216,7 @@ const transformCitiesData = async (data) => {
       cities.push(cityObj);
     });
     app.countryToDisplay.cities = [...cities];
+    app.freez = false;
     createChart();
   } catch {
     console.log("error");

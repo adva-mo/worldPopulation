@@ -29,13 +29,11 @@
 }
 button {
   background-color: var(--gray);
-  color: var(--blue);
+  color: #2c98aeff;
   border: none;
   margin: 0 0.4rem;
   padding: 0.2rem;
   border-radius: 5px;
-}
-@media (max-width: 500px) {
 }
 .country-btn {
   background-color: var(--cream);
