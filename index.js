@@ -23,7 +23,7 @@ const fetchCountriesAndPopulation = async (continent) => {
       `https://restcountries.com/v3.1/region/${continent}`
     );
     const res = await data.json();
-    // console.log(res);
+    console.log(res);
     transformCountriesData(res, continent);
     setSpinner(false);
   } catch {
@@ -47,7 +47,7 @@ const transformCountriesData = async (arr, continent) => {
       .sort((a, b) => {
         return b.population - a.population;
       });
-    app.data[continent] = [...res.slice(0, 25)];
+    app.data[continent] = [...res.slice(0, 45)];
   } catch {
     console.log("error");
   }
@@ -157,13 +157,11 @@ const fetchCitiesInfo = async (e) => {
       }
     );
     const data = await res.json();
-    console.log(data);
-    if (data.error == true) {
+    // console.log(data);
+    if (data.error) {
       await fetchCitiesPopByOfficial(e);
-      return;
     } else {
       transformCitiesData(data, e);
-      return;
     }
   } catch {
     console.log("error");
@@ -202,11 +200,13 @@ const fetchCitiesPopByOfficial = async (e) => {
 const transformCitiesData = async (data) => {
   try {
     const rawInfo = await data;
+    console.log(rawInfo);
     setSpinner(false);
     const cities = [];
     rawInfo.data.forEach((c) => {
       const cityObj = {};
       cityObj["city"] = c.city;
+
       cityObj["population"] = c.populationCounts[0].value;
       cityObj["year"] = c.populationCounts[0].year;
       cities.push(cityObj);
@@ -238,24 +238,28 @@ async function createChart() {
 }
 
 function displayChart(data1) {
-  if (myChart != undefined) myChart.destroy();
+  if (myChart != undefined) {
+    myChart.destroy();
+    canvas.remove();
+  }
   const data = {
     labels: [...data1[0]],
     datasets: [
       {
-        label: "population",
-        backgroundColor: "rgb(255, 99, 132)",
-        borderColor: "rgb(174,174,174)",
+        label: "Population",
+        backgroundColor: [
+          "rgb(147,209,255)",
+          "rgb(120,196,253)",
+          "rgb(96,186,253)",
+          "rgb(62,172,255)",
+          "rgb(13,151,255)",
+        ],
         color: "#eeeeee;",
         data: [...data1[1]],
-        borderWidth: "2px",
-      },
-      {
-        label: "population",
-        backgroundColor: "rgba(174,174,174,0.6)",
-        borderColor: "rgba(174,174,174,0.6)",
-        data: [...data1[1]],
         borderWidth: 2,
+        borderColor: "rgb(174,174,174)",
+        hoverBorderWidth: 2,
+        hoverBorderColor: "rgb(153,153,153)",
       },
     ],
   };

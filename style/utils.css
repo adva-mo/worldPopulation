@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Dosis:wght@200;300;400;500;600&family=Roboto:wght@300&display=swap");
 * {
   margin: 0;
   padding: 0;
@@ -6,7 +7,7 @@
   --blue-bg: rgba(166, 208, 240);
   --cream: #eeeeee;
   --blue: #0081e2;
-  --gray: #aeaeae;
+  --gray: rgba(174, 174, 174, 0.55);
   --eagle-green: #185d65ff;
 }
 .flex-row {
@@ -27,11 +28,21 @@
   font-size: 1rem;
 }
 button {
-  background-color: var(--blue-bg);
-  /* background: rgba(0, 0, 0, 0.3); */
-  color: var(--eagle-green);
+  background-color: var(--gray);
+  color: var(--blue);
   border: none;
   margin: 0 0.4rem;
   padding: 0.2rem;
   border-radius: 5px;
+}
+@media (max-width: 500px) {
+}
+.country-btn {
+  background-color: var(--cream);
+  font-size: 0.8rem;
+  width: 5rem;
+  height: 2rem;
+}
+button:hover {
+  outline: 1px solid rgb(174, 174, 174);
 }

@@ -1,12 +1,18 @@
 body {
   background: url(/photos/world-bg.jpg) no-repeat center center/cover;
-  height: 100vh;
-  padding: 1rem;
+  max-height: fit-content;
+  min-height: 100vh;
+  padding-top: 1rem;
+  font-family: "Roboto", sans-serif;
 }
 .chart-container {
-  /* background-color: antiquewhite; */
-  width: 90vw;
-  height: 70vh;
+  max-width: 80vw;
+  /* max-height: 60vh; */
+  /* height: 50%; */
+}
+#main-container {
+  gap: 1.5rem;
+  /* height: 90vh; */
 }
 #main-container::before {
   content: "";
@@ -21,8 +27,8 @@ body {
   z-index: 10;
 }
 #canvas {
-  width: 100% !important;
-  height: 100% !important;
+  width: 90% !important;
+  height: 90% !important;
 }
 .spinner {
   position: fixed;
@@ -38,4 +44,9 @@ body {
   top: 50%;
   left: 20%;
   background-color: var(--gray);
+}
+.countries-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
 }
